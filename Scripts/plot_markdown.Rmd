@@ -1,0 +1,574 @@
+---
+title: "Express STI Clinic Manuscript Plots"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+classoption: landscape
+---
+
+## Benefits Line Graph: Prevalence ## 
+
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE}
+knitr::opts_chunk$set(dev="png")
+
+dat <- prev_all_weeks_both_scenario
+
+dat[which(dat$Type == "prev.ugc"), "Type"] <- "Urogenital Infections"
+dat[which(dat$Type == "prev.rgc"), "Type"] <- "Rectal Infections"
+dat[which(dat$Type == "prev.ogc"), "Type"] <- "Pharyngeal Infections"
+dat[which(dat$Type == "prev.gc"), "Type"] <- "Overall Cases"
+
+# results w/ 95% confidence interval # TODO - is this correct?
+dat_mean_conf_int <- ddply(dat, .(Week, Year, Type, Scenario), summarize, 
+                           Mean =  mean_se(Value, mult = 1.96)$y,
+                           Conf_Int_Lo = mean_se(Value, mult = 1.96)$ymin,
+                           Conf_Int_Hi = mean_se(Value, mult = 1.96)$ymax)
+      
+ggplot(dat_mean_conf_int, aes(x = Week, y = Mean), alpha = 0.2) +
+  geom_line(aes(color = Scenario)) +
+  geom_ribbon(aes(fill = Scenario, ymin = Conf_Int_Lo, ymax = Conf_Int_Hi), alpha = 0.2) +
+  facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+# results w/ 89% credible interval # TODO - is this correct?
+dat_mean_cred_int <- ddply(dat, .(Week, Year, Type, Scenario), summarize, 
+                           Mean =  mean(Value),
+                           Cred_Int_Lo = ci(Value, ci = 0.95)$CI_low,
+                           Cred_Int_Hi = ci(Value, ci = 0.95)$CI_high)
+      
+ggplot(dat_mean_cred_int, aes(x = Week, y = Mean), alpha = 0.2) +
+  geom_line(aes(color = Scenario)) +
+  geom_ribbon(aes(fill = Scenario, ymin = Cred_Int_Lo, ymax = Cred_Int_Hi), alpha = 0.2) +
+  facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+# results w/ 89% credible interval # TODO - is this correct? From Minttu paper
+dat_group <- group_by(dat, Week, Year, Type, Scenario) %>% 
+  summarise(Mean = mean(Value, na.rm=T),
+            ci_high = quantile(Value, 0.975, na.rm = T),
+            ci_low = quantile(Value, 0.025, na.rm = T))
+
+ggplot(dat_group, aes(x = Week, y = Mean), alpha = 0.2) +
+  geom_line(aes(color = Scenario)) +
+  geom_ribbon(aes(fill = Scenario, ymin = ci_low, ymax = ci_high), alpha = 0.2) +
+  facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+
+```
+
+## Benefits Line Graph: Incidence per 100 Person-Years ## 
+
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE}
+knitr::opts_chunk$set(dev="png")
+
+dat <- ir100_week_combo
+
+dat[which(dat$Type == "ugc"), "Type"] <- "Urogenital Infections"
+dat[which(dat$Type == "rgc"), "Type"] <- "Rectal Infections"
+dat[which(dat$Type == "ogc"), "Type"] <- "Pharyngeal Infections"
+dat[which(dat$Type == "gc"), "Type"] <- "Overall Cases"
+  
+dat_mean <- ddply(dat, .(Week, Type, Scenario), summarize, Mean = mean(Value))
+b <- ggplot(dat_mean, aes(x = Week, y = Mean), alpha = 0.2)
+
+b + geom_line(aes(color = Scenario)) + 
+  facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+b + geom_smooth(aes(color = Scenario)) +
+  facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+
+
+
+```
+
+## Cost Plot: Screening, Testing, Treatment (2020 USD) ## 
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE}
+knitr::opts_chunk$set(dev="png")
+
+scr_costs_wk_combo$Type <- "Screening"
+test_costs_wk_combo$Type <- "Testing"
+tx_costs_wk_combo$Type <- "Treatment"
+
+dat <- rbind(scr_costs_wk_combo,
+             test_costs_wk_combo,
+             tx_costs_wk_combo, stringsAsFactors = FALSE)
+
+dat_melt <- melt(dat, id.vars = c("Week", "Scenario", "Type"))
+colnames(dat_melt)[names(dat_melt) == "variable"] <- "Simulation"
+colnames(dat_melt)[names(dat_melt) == "value"] <- "Cost"
+
+total_costs_wk_combo <- ddply(dat_melt, .(Week, Scenario, Simulation), summarize, Cost = sum(Cost))
+total_costs_wk_combo$Type <- "Total"
+
+dat_total <- rbind(dat_melt,
+             total_costs_wk_combo, stringsAsFactors = FALSE)
+
+dat_melt_mean <- ddply(dat_total, .(Scenario, Type, Week), summarize, Mean = mean(Cost))
+dat_melt_cumsum <- ddply(dat_melt_mean, .(Scenario, Type), transform, Cum_Sum = cumsum(Mean))
+dat_melt_cumsum$Type <- factor(dat_melt_cumsum$Type, levels = c("Total", "Screening", "Testing", "Treatment"))
+
+b <- ggplot(dat_melt_cumsum, aes(x = Week, y = dat_melt_cumsum$Cum_Sum), alpha = 0.2)
+b + geom_line(aes(color = Type, linetype = Scenario)) +
+  scale_y_continuous(labels = scales::comma) +
+  ylab("Cumulative Costs (2020 USD)") +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+
+
+  
+# dat_melt_mean <- dat_melt_mean[which(dat_melt_mean$Week > 2), ]
+# 
+# c <- ggplot(dat_melt_mean, aes(x = Week, y = dat_melt_mean$Mean), alpha = 0.2)
+# c + geom_line(aes(color = Type, linetype = Scenario)) 
+#   scale_y_continuous(labels = scales::comma) +
+#   ylab("Mean Costs (2020 USD)")
+# 
+
+```
+
+## Cost Table: Screening, Testing, Treatment (2020 USD) ## 
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE}
+knitr::opts_chunk$set(dev="png")
+
+calculate_mean_across_sims_costs <- function(cost_file, scenario, type) {
+  
+  mean_list <- list()
+  
+  for (year in names(cost_file)) {
+    
+    dat <- cost_file[[year]]
+
+    mean_CI_dat <- mean_se(dat, mult = 1.96)
+
+    for (column in 1:ncol(mean_CI_dat)) {
+      
+      mean_CI_dat[, column] <- round(mean_CI_dat[, column], digits = 0)
+
+    }
+
+    mean_CI_dat$Mean_CI <- paste0(mean_CI_dat[, 1], " (", mean_CI_dat[, 2], ", ", mean_CI_dat[, 3], ")")
+    mean_CI_dat$Scenario <- scenario
+    mean_CI_dat$Type <- type
+    
+    mean_CI_dat <- mean_CI_dat[, c("Mean_CI", "Scenario", "Type")]
+    mean_list[[year]] <- mean_CI_dat
+  }
+  mean_list_rbind <- do.call(rbind, mean_list)
+  mean_list_rbind 
+}
+
+run_calc_for_all_costs <- function(base_file, comp_file, type) {
+  
+  dat_base <- calculate_mean_across_sims_costs(base_file, "Baseline", type)
+  dat_comp <- calculate_mean_across_sims_costs(comp_file, "Express", type)
+  dat <- rbind(dat_base, dat_comp)
+  dat
+}
+
+mean_CI_cost_scr <- run_calc_for_all_costs(scr_costs_disc_trad, scr_costs_disc_xpr, "Screening")
+mean_CI_cost_test <- run_calc_for_all_costs(test_costs_disc_trad, test_costs_disc_xpr, "Testing")
+mean_CI_cost_tx <- run_calc_for_all_costs(tx_costs_disc_trad, tx_costs_disc_xpr, "Treatment")
+
+clean_data_for_table_costs <- function(scr_cost, test_cost, tx_cost) {
+  
+  combo_data <- data.frame(rbind(scr_cost, test_cost, tx_cost), stringsAsFactors = FALSE)
+    combo_data$Year <- rep(c(0:4), nrow(combo_data) / length(0:4))
+
+  combo_data <- dcast(combo_data, Year + Type ~ Scenario, value.var = "Mean_CI")
+  combo_data <- combo_data[, c("Type", "Year", "Baseline", "Express")]
+  combo_data
+}
+
+combo_data <- clean_data_for_table_costs(mean_CI_cost_scr, mean_CI_cost_test, mean_CI_cost_tx)
+combo_data <- combo_data[order(combo_data$Type, combo_data$Type), ]
+rownames(combo_data) <- c()
+
+kable(combo_data, "latex", booktabs = T) %>% 
+  kable_styling(latex_options = c("basic","hover"), position = "left") %>% 
+  add_header_above(c(" " = 2, "Mean and 95% CI" = 2)) %>% 
+  collapse_rows(columns = 1) 
+
+```
+
+## Cost Bar Plots: Screening, Testing, Treatment (2020 USD) ## 
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE}
+knitr::opts_chunk$set(dev="png")
+
+calculate_mean_across_sims_costs <- function(cost_file, scenario, type) {
+
+  mean_list <- list()
+
+  for (year in names(cost_file)) {
+
+    dat <- cost_file[[year]]
+
+    mean <-mean(dat)
+    
+    vals <- c(mean, scenario, type)
+    mean_list[[year]] <- vals
+  }
+  
+  mean_list_rbind <- data.frame(do.call(rbind, mean_list), stringsAsFactors = FALSE)
+  colnames(mean_list_rbind) <- c("Mean", "Scenario", "Type")
+  mean_list_rbind$Mean <- as.numeric(mean_list_rbind$Mean)
+  mean_list_rbind$Year <- c(0, 1, 2, 3 ,4)
+  mean_list_rbind
+}
+
+run_calc_for_all_costs <- function(base_file, comp_file, type) {
+  
+  dat_base <- calculate_mean_across_sims_costs(base_file, "Traditional", type)
+  dat_comp <- calculate_mean_across_sims_costs(comp_file, "Express", type)
+  dat <- rbind(dat_base, dat_comp)
+  dat
+}
+
+mean_CI_cost_scr <- run_calc_for_all_costs(scr_costs_disc_trad, scr_costs_disc_xpr, "Screening")
+mean_CI_cost_test <- run_calc_for_all_costs(test_costs_disc_trad, test_costs_disc_xpr, "Testing")
+mean_CI_cost_tx <- run_calc_for_all_costs(tx_costs_disc_trad, tx_costs_disc_xpr, "Treatment")
+
+combo_data <- data.frame(rbind(mean_CI_cost_scr, mean_CI_cost_test, mean_CI_cost_tx), stringsAsFactors = FALSE)
+
+dat <- combo_data
+
+b <- ggplot(dat, aes(x = Type, y = Mean), alpha = 0.2)
+b + geom_col(aes(fill = Scenario), position = position_dodge(0.8), width = 0.7) + 
+  facet_wrap(~Year, ncol = 5) +
+  scale_y_continuous(labels = scales::comma)
+  
+
+
+```
+
+
+## Cost-Effectiveness: Cumulative ICER Results (2020 USD) ## 
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE, results = 'asis'}
+knitr::opts_chunk$set(dev="png")
+
+mean_CI_bootstrap_icer_results <- mean_CI_bootstrap_icer_results[c("cost_diff", "inf_avert", "inf_icer", "case_avert", "case_icer")]
+
+clean_data_for_table_icer <- function(icer_results) {
+  
+  icer_results_formatted <- list()
+  
+  for (name in names(icer_results)) {
+    
+    dat <- icer_results[[name]]
+    mean_CI_list <- list()
+    
+    for (column in 1:ncol(dat)) {
+      
+      dat[, column] <- round(dat[, column], digits = 0)
+      icer_results_formatted[[name]] <- dat
+    }
+    
+    dat <- icer_results_formatted[[name]]
+    
+    for (row in 1:nrow(dat)) {
+      
+      mean_CI_list[[row]] <- paste0(dat[row, 1], " (", dat[row, 2], ", ", dat[row, 3], ")")
+    } 
+    
+    mean_CI_list_rbind <- do.call(rbind, mean_CI_list)
+    icer_results_formatted[[name]] <- mean_CI_list_rbind
+    
+  }
+  icer_results_formatted
+}
+
+# combo_data <- clean_data_for_table_icer(mean_CI_bootstrap_icer_results)
+# combo_data <- do.call(cbind, combo_data)
+# Calculation <- c("(Express - Baseline)", "(Baseline - Express)", "(Cost Diff. / Num. Averted)", "(Baseline - Express)", "(Cost Diff. / Num. Averted)")
+# combo_data <- rbind(Calculation, combo_data)
+# colnames(combo_data) <- c("Cumul. Cost Difference ", "Cumul. Num. Averted", "Cumul. ICER", "Cumul. Num. Averted", "Cumul. ICER")
+# rownames(combo_data) <- c("", 0, 1, 2, 3, 4)
+# 
+# kable(combo_data, "latex", booktabs = T) %>% 
+#   kable_styling(latex_options = c("basic","hover"), position = "left") %>% 
+#   add_header_above(c(" " = 2, "Infections (Mean and 95% CI)" = 2, "Cases (Mean and 95% CI)" = 2)) %>% 
+#   pack_rows(index = c("Calculation"= 1, "Years" = 5), hline_after = T)
+
+combo_data <- clean_data_for_table_icer(mean_CI_bootstrap_icer_results)
+combo_data <- do.call(cbind, combo_data)
+colnames(combo_data) <- c("Cumul. Cost Difference ", "Cumul. Num. Averted", "Cumul. ICER", "Cumul. Num. Averted", "Cumul. ICER")
+rownames(combo_data) <- as.character(c(1, 2, 3, 4, 5))
+
+kable(combo_data, "latex", booktabs = T) %>% 
+  kable_styling(latex_options = c("basic","hover"), position = "left") %>% 
+  add_header_above(c(" " = 2, "Infections (Mean and 95% CI)" = 2, "Cases (Mean and 95% CI)" = 2)) %>% 
+  pack_rows(index = c("Years" = 5), hline_after = T)
+
+```
+
+## Cost-Effectiveness: Cumulative ICER Results (2020 USD), Sensitivity Analysis Varying Ops Costs ## 
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE, results = 'asis'}
+knitr::opts_chunk$set(dev="png")
+
+prep_sens_analysis_plot <- function(sens_analysis_output, type) {
+  
+  dat <- sens_analysis_output[which(sens_analysis_output$Type == type), ]
+  colnames(dat) <- c("Mean", "CI_Lower", "CI_Upper", "Year", "Base_Level", "Comp_Level", "Type")
+  dat$Mean <- round(dat$Mean, digits = 0)
+  dat$CI_Lower <- round(dat$CI_Lower, digits = 0)
+  dat$CI_Upper <- round(dat$CI_Upper, digits = 0)
+  
+  dat$Year <- as.character(dat$Year)
+  dat[which(dat$Year == "year1"), "Year"] <- 1
+  dat[which(dat$Year == "year2"), "Year"] <- 2
+  dat[which(dat$Year == "year3"), "Year"] <- 3
+  dat[which(dat$Year == "year4"), "Year"] <- 4
+  dat[which(dat$Year == "year5"), "Year"] <- 5
+  
+  dat[which(dat$Type == "inf_icer"), "Type"] <- "Infections"
+  dat[which(dat$Type == "case_icer"), "Type"] <- "Cases"
+  
+  dat
+  
+}
+
+# types <- unique(mean_CI_bootstrap_icer_results_sens_analysis$Type)
+
+# types <- c("inf_icer", "case_icer")
+# 
+# for (type in types) {
+#   
+#   dat <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, type)
+#   b <- ggplot(dat, aes(x = Year, y = Mean))
+#   
+#   b_details <- b + 
+#     geom_point(aes(color = Base_Level), position = position_jitter(width = 0.25, height = 0.25)) +
+#     scale_y_continuous(labels = scales::comma) +
+#     ylab("Mean ICER") +
+#    scale_colour_discrete(name = "Express Cost Level", labels = c(paste0(seq(from = 1, to = 10, by = 1), "%")))
+#   
+#   print(b_details)
+# }
+
+# types <- c("inf_icer", "case_icer")
+
+dat_inf <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, "inf_icer")
+dat_case <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, "case_icer")
+dat <- rbind(dat_inf, dat_case, stringsAsFactors = FALSE)
+dat$Comp_Level <- paste0(as.numeric(dat$Comp_Level), "%")
+dat$Comp_Level <- factor(dat$Comp_Level, levels = paste0(seq(10, 1, -1), "%"))
+
+b <- ggplot(dat, aes(x = Year, y = Mean))
+
+b + 
+  geom_point(aes(color = Comp_Level), position = position_jitter(width = 0.25, height = 0.25)) +
+  scale_y_continuous(labels = scales::comma) +
+  ylab("Mean ICER") +
+  scale_color_viridis(name = "Express Cost Level", discrete = TRUE) +
+  # scale_colour_discrete(name = "Express Cost Level", labels = c(paste0(seq(from = 1, to = 10, by = 1), "%"))) +
+  facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+
+# for (type in types) {
+#   
+#   dat <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, type)
+#   b <- ggplot(dat, aes(x = Comp_Level, y = Mean))
+#   
+#   b_details <- b + 
+#     geom_point(aes(color = Year), position = position_jitter(width = 0.25, height = 0.25)) +
+#     ggtitle(type) +
+#     scale_y_continuous(labels = scales::comma) +
+#     facet_wrap(~ Base_Level, ncol = 5)
+#   
+#   print(b_details)
+#   
+# }
+
+# for (type in types) {
+#   
+#   dat <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, type)
+#   b <- ggplot(dat, aes(x = Comp_Level, y = Mean))
+#   
+#   b_details <- b + 
+#     geom_col(aes(fill = Year), position = position_stack()) +
+#     ggtitle(type) +
+#     scale_y_continuous(labels = scales::comma) +
+#     facet_wrap(~ Base_Level, ncol = 5)
+#   
+#   print(b_details)
+#   
+# }
+
+```
+
+## Cost-Effectiveness: Cumulative Total Costs Results (2020 USD), Sensitivity Analysis Varying Ops Costs ## 
+```{r, echo=FALSE, warning = FALSE, message = FALSE, error = FALSE, results = 'asis'}
+knitr::opts_chunk$set(dev="png")
+
+prep_sens_analysis_plot <- function(sens_analysis_output, type) {
+  
+  dat <- sens_analysis_output[which(sens_analysis_output$Type == type), ]
+  colnames(dat) <- c("Mean", "CI_Lower", "CI_Upper", "Year", "Base_Level", "Comp_Level", "Type")
+  dat$Mean <- round(dat$Mean, digits = 0)
+  dat$CI_Lower <- round(dat$CI_Lower, digits = 0)
+  dat$CI_Upper <- round(dat$CI_Upper, digits = 0)
+  
+  dat$Year <- as.character(dat$Year)
+  dat[which(dat$Year == "year1"), "Year"] <- 1
+  dat[which(dat$Year == "year2"), "Year"] <- 2
+  dat[which(dat$Year == "year3"), "Year"] <- 3
+  dat[which(dat$Year == "year4"), "Year"] <- 4
+  dat[which(dat$Year == "year5"), "Year"] <- 5
+  
+  dat[which(dat$Type == "inf_icer"), "Type"] <- "Infections"
+  dat[which(dat$Type == "case_icer"), "Type"] <- "Cases"
+  
+  dat
+  
+}
+
+# types <- unique(mean_CI_bootstrap_icer_results_sens_analysis$Type)
+
+# types <- c("inf_icer", "case_icer")
+# 
+# for (type in types) {
+#   
+#   dat <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, type)
+#   b <- ggplot(dat, aes(x = Year, y = Mean))
+#   
+#   b_details <- b + 
+#     geom_point(aes(color = Base_Level), position = position_jitter(width = 0.25, height = 0.25)) +
+#     scale_y_continuous(labels = scales::comma) +
+#     ylab("Mean ICER") +
+#    scale_colour_discrete(name = "Express Cost Level", labels = c(paste0(seq(from = 1, to = 10, by = 1), "%")))
+#   
+#   print(b_details)
+# }
+
+# types <- c("inf_icer", "case_icer")
+
+dat <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, "cost_diff")
+# dat_case <- prep_sens_analysis_plot(mean_CI_bootstrap_icer_results_sens_analysis, "cost_diff")
+# dat <- rbind(dat_inf, dat_case, stringsAsFactors = FALSE)
+dat$Comp_Level <- paste0(as.numeric(dat$Comp_Level), "%")
+dat$Comp_Level <- factor(dat$Comp_Level, levels = paste0(seq(10, 1, -1), "%"))
+
+dat[which(dat$Type == "cost_diff"), "Type"] <- "Total Cost Difference"
+
+b <- ggplot(dat, aes(x = Year, y = Mean))
+
+b + 
+  geom_point(aes(color = Comp_Level), position = position_jitter(width = 0.25, height = 0.25)) +
+  scale_y_continuous(labels = scales::comma) +
+  ylab("Mean Total Cost Difference") +
+  scale_color_viridis(name = "Express Cost Level", discrete = TRUE) +
+  # scale_colour_discrete(name = "Express Cost Level", labels = c(paste0(seq(from = 1, to = 10, by = 1), "%"))) +
+  # facet_wrap(~Type, ncol = 2) +
+  theme(panel.background = element_rect(fill = "white",
+                                        colour = "white"),
+        panel.border = element_rect(color = "black", size = 0.1, fill = NA),  
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.major.y = element_line(size = 0.1, color = "grey"),
+        axis.line = element_line(size = 0.1, linetype = "solid",
+                                 color = "black"),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+```
+
