@@ -15,6 +15,13 @@ library(readr)
 
 files_path <- paste0(getwd(), "/")
 
+# Create output folders
+dir.create(paste0(files_path, "../Output/Economic_Model"), recursive = TRUE)
+dir.create(paste0(files_path, "../Output/Outcomes_Model"), recursive = TRUE)
+dir.create(paste0(files_path, "../Output/Economic_Outcomes_Model"), recursive = TRUE)
+dir.create(paste0(files_path, "../Output/Sensitivity_Analysis"), recursive = TRUE)
+dir.create(paste0(files_path, "../Output/Plots"), recursive = TRUE)
+
 # STEP 2: Economic Model ----------------------------------------------
 
 costs <- read_csv(paste0(files_path, "Data/", "express_clinic_costs.csv"))
